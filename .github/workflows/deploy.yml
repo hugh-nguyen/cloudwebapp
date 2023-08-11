@@ -1,0 +1,35 @@
+name: Deploy React App to EC2
+
+on:
+  push:
+    branches:
+      - main # or whichever branch you want
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v2
+
+    - name: Build React App
+      run: |
+        cd webapp
+        npm install
+        npm run build
+
+    - name: Zip Build
+      run: |
+        cd webapp
+        zip -r build.zip build/
+
+    - name: Setup AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2 # your region
+
+    - name: Upload to S3
+      run: aws s3 cp webapp/build.zip s3://hn-testcloud-build-store/
