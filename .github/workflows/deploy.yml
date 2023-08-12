@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout Repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Build React App
       run: |
@@ -29,7 +29,14 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-west-2 # your region
+        aws-region: ap-southeast-2
 
     - name: Upload to S3
       run: aws s3 cp webapp/build.zip s3://hn-testcloud-build-store/
+
+    - name: CDK Deploy
+      run: |
+        npm install -g aws-cdk
+        cd cdk
+        npm install
+        cdk deploy --require-approval never
