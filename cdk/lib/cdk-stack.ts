@@ -22,7 +22,7 @@ export class CdkStack extends cdk.Stack {
     const bastionUserData = ec2.UserData.forLinux();
     bastionUserData.addCommands(
       'yum install -y aws-cli',
-      'aws secretsmanager get-secret-value --secret-id internalcloudkeypair --query SecretString --output text > /home/ec2-user/internalcloudkeypair.pem',
+      'aws secretsmanager get-secret-value --secret-id internalcloudkeypair --query SecretString --output text  --region ap-southeast-2 > /home/ec2-user/internalcloudkeypair.pem',
       'chmod 400 /home/ec2-user/internalcloudkeypair.pem'
     );
 
@@ -90,7 +90,7 @@ export class CdkStack extends cdk.Stack {
       role: ec2Role,
       userData: userData,
       securityGroup: sg,
-      keyName: 'internalcloudkeypair'
+      keyName: 'cloudkeypair'
     });
     
   }
