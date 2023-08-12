@@ -14,7 +14,8 @@ export class CdkStack extends cdk.Stack {
     const bastionRole = new iam.Role(this, 'BastionRole', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
     });
-    
+
+    // Attach the EC2 Instance Connect policy to bastionRole
     bastionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
 
     const sshKeySecret = secretsmanager.Secret.fromSecretNameV2(this, 'internalcloudkeypair', 'internalcloudkeypair');
@@ -24,7 +25,7 @@ export class CdkStack extends cdk.Stack {
     const bastionUserData = ec2.UserData.forLinux();
     bastionUserData.addCommands(
       'yum install -y aws-cli',
-      // 'yum -y install ec2-instance-connect', // Install EC2 Instance Connect package
+      'yum -y install ec2-instance-connect', // Install EC2 Instance Connect package
       'aws secretsmanager get-secret-value --secret-id internalcloudkeypair --query SecretString --output text  --region ap-southeast-2 > /home/ec2-user/internalcloudkeypair.pem',
       'chmod 400 /home/ec2-user/internalcloudkeypair.pem'
     );
@@ -38,22 +39,22 @@ export class CdkStack extends cdk.Stack {
     new ec2.Instance(this, 'BastionHost', {
       vpc: vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PUBLIC, // Bastion should be in a public subnet
+        subnetType: ec2.SubnetType.PUBLIC,
       },
       instanceType: new ec2.InstanceType('t2.micro'),
       machineImage: new ec2.AmazonLinuxImage(),
       securityGroup: bastionSG,
       role: bastionRole,
       userData: bastionUserData,
-      keyName: 'cloudkeypair' // Ensure you have access to this keypair
+      keyName: 'cloudkeypair'
     });
-
 
     // Webserver instance
     const ec2Role = new iam.Role(this, 'EC2Role', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
     });
 
+    // Attach the EC2 Instance Connect policy to ec2Role
     ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
 
     ec2Role.addToPolicy(new iam.PolicyStatement({
@@ -65,15 +66,15 @@ export class CdkStack extends cdk.Stack {
       shebang: "#!/bin/bash -xe"
     });
     userData.addCommands(
-      'yum install -y aws-cli', // install AWS CLI; adjust for your OS if not Amazon Linux
-      // 'yum -y install ec2-instance-connect', // Install EC2 Instance Connect package
+      'yum install -y aws-cli',
+      'yum -y install ec2-instance-connect', // Install EC2 Instance Connect package
       'aws s3 cp s3://hn-testcloud-build-store/build.zip /tmp/',
       'unzip /tmp/build.zip -d /tmp/',
-      'yum install -y nginx', // Install nginx
-      'service nginx start', // Ensure nginx starts on boot
-      'rm -rf /usr/share/nginx/html/*', // Clear the default nginx html directory
-      'cp -R /tmp/build/* /usr/share/nginx/html/', // Copy your react app to nginx's serve directory
-      'service nginx restart' // Start nginx
+      'yum install -y nginx',
+      'service nginx start',
+      'rm -rf /usr/share/nginx/html/*',
+      'cp -R /tmp/build/* /usr/share/nginx/html/',
+      'service nginx restart'
     );
 
     const sg = new ec2.SecurityGroup(this, 'InstanceSG', {
@@ -81,23 +82,19 @@ export class CdkStack extends cdk.Stack {
       allowAllOutbound: true,
       description: 'Allow ssh and http(s) access',
     });
-    
+
     sg.addIngressRule(bastionSG, ec2.Port.tcp(22), 'Allow SSH from Bastion');
     sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow HTTP');
     sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS');
 
     new ec2.Instance(this, 'MyInstance', {
       vpc: vpc,
-      // vpcSubnets: {
-      //   subnetType: ec2.SubnetType.PUBLIC, // Ensure you're launching in a public subnet
-      // },
       instanceType: new ec2.InstanceType('t2.micro'),
-      machineImage: new ec2.AmazonLinuxImage(), // or any other image you prefer
+      machineImage: new ec2.AmazonLinuxImage(),
       role: ec2Role,
       userData: userData,
       securityGroup: sg,
       keyName: 'cloudkeypair'
     });
-    
   }
 }
