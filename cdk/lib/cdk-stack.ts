@@ -15,7 +15,7 @@ export class CdkStack extends cdk.Stack {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
     });
     
-    bastionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
+    // bastionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
 
     const sshKeySecret = secretsmanager.Secret.fromSecretNameV2(this, 'internalcloudkeypair', 'internalcloudkeypair');
     
@@ -38,23 +38,22 @@ export class CdkStack extends cdk.Stack {
     new ec2.Instance(this, 'BastionHost', {
       vpc: vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PUBLIC, // Bastion should be in a public subnet
+        subnetType: ec2.SubnetType.PUBLIC,
       },
       instanceType: new ec2.InstanceType('t2.micro'),
       machineImage: new ec2.AmazonLinuxImage(),
       securityGroup: bastionSG,
       role: bastionRole,
       userData: bastionUserData,
-      keyName: 'cloudkeypair' // Ensure you have access to this keypair
+      keyName: 'cloudkeypair'
     });
-
 
     // Webserver instance
     const ec2Role = new iam.Role(this, 'EC2Role', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
     });
 
-    ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
+    // ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
 
     ec2Role.addToPolicy(new iam.PolicyStatement({
       actions: ['s3:GetObject'],
@@ -65,15 +64,15 @@ export class CdkStack extends cdk.Stack {
       shebang: "#!/bin/bash -xe"
     });
     userData.addCommands(
-      'yum install -y aws-cli', // install AWS CLI; adjust for your OS if not Amazon Linux
+      'yum install -y aws-cli',
       // 'yum -y install ec2-instance-connect', // Install EC2 Instance Connect package
       'aws s3 cp s3://hn-testcloud-build-store/build.zip /tmp/',
       'unzip /tmp/build.zip -d /tmp/',
-      'yum install -y nginx', // Install nginx
-      'service nginx start', // Ensure nginx starts on boot
-      'rm -rf /usr/share/nginx/html/*', // Clear the default nginx html directory
-      'cp -R /tmp/build/* /usr/share/nginx/html/', // Copy your react app to nginx's serve directory
-      'service nginx restart' // Start nginx
+      'yum install -y nginx',
+      'service nginx start',
+      'rm -rf /usr/share/nginx/html/*',
+      'cp -R /tmp/build/* /usr/share/nginx/html/',
+      'service nginx restart'
     );
 
     const sg = new ec2.SecurityGroup(this, 'InstanceSG', {
@@ -98,6 +97,5 @@ export class CdkStack extends cdk.Stack {
       securityGroup: sg,
       keyName: 'cloudkeypair'
     });
-    
   }
 }
