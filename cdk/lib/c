@@ -16,7 +16,7 @@ export class CdkStack extends cdk.Stack {
     });
 
     // Attach the EC2 Instance Connect policy to bastionRole
-    bastionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('EC2InstanceConnect'));
+    // bastionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('EC2InstanceConnect'));
 
     const sshKeySecret = secretsmanager.Secret.fromSecretNameV2(this, 'internalcloudkeypair', 'internalcloudkeypair');
     
@@ -55,7 +55,7 @@ export class CdkStack extends cdk.Stack {
     });
 
     // Attach the EC2 Instance Connect policy to ec2Role
-    ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('EC2InstanceConnect'));
+    // ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('EC2InstanceConnect'));
 
     ec2Role.addToPolicy(new iam.PolicyStatement({
       actions: ['s3:GetObject'],
