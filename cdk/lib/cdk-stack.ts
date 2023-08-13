@@ -2,20 +2,44 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
 import { Construct } from 'constructs';
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = new ec2.Vpc(this, 'MyVpc');
+    // Create a new VPC
+    const vpc = new ec2.Vpc(this, 'MyPrivateVPC', {
+        cidr: '10.0.0.0/16',
+        maxAzs: 2,  // Recommended for high availability
+        natGateways: 0,  // No NAT gateway for total isolation2
+        
+        subnetConfiguration: [
+          {
+            subnetType: ec2.SubnetType.PUBLIC,
+            name: 'Public',
+            cidrMask: 24,  // Adjust CIDR mask as needed
+          },
+          {
+            cidrMask: 24,
+            name: 'PrivateSubnet',
+            subnetType: ec2.SubnetType.PRIVATE_ISOLATED,  // ISOLATED subnet means it won't have NAT or Internet connectivity
+          }
+        ],
+    });
+
+    // Create a Route53 private hosted zone
+    const privateHostedZone = new route53.PrivateHostedZone(this, 'MyPrivateZone', {
+        vpc: vpc,
+        zoneName: 'hn-cloudwebapp.local',  // Change this to your preferred domain name
+    });
 
     // Bastion host
     const bastionRole = new iam.Role(this, 'BastionRole', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
     });
     
-    // bastionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
 
     const sshKeySecret = secretsmanager.Secret.fromSecretNameV2(this, 'internalcloudkeypair', 'internalcloudkeypair');
     
@@ -24,7 +48,6 @@ export class CdkStack extends cdk.Stack {
     const bastionUserData = ec2.UserData.forLinux();
     bastionUserData.addCommands(
       'yum install -y aws-cli',
-      // 'yum -y install ec2-instance-connect', // Install EC2 Instance Connect package
       'aws secretsmanager get-secret-value --secret-id internalcloudkeypair --query SecretString --output text  --region ap-southeast-2 > /home/ec2-user/internalcloudkeypair.pem',
       'chmod 400 /home/ec2-user/internalcloudkeypair.pem'
     );
@@ -41,7 +64,9 @@ export class CdkStack extends cdk.Stack {
         subnetType: ec2.SubnetType.PUBLIC,
       },
       instanceType: new ec2.InstanceType('t2.micro'),
-      machineImage: new ec2.AmazonLinuxImage(),
+      machineImage: new ec2.AmazonLinuxImage({
+        generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
+      }),
       securityGroup: bastionSG,
       role: bastionRole,
       userData: bastionUserData,
@@ -53,8 +78,6 @@ export class CdkStack extends cdk.Stack {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
     });
 
-    // ec2Role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2InstanceConnect'));
-
     ec2Role.addToPolicy(new iam.PolicyStatement({
       actions: ['s3:GetObject'],
       resources: ['arn:aws:s3:::hn-testcloud-build-store/build.zip']
@@ -65,7 +88,6 @@ export class CdkStack extends cdk.Stack {
     });
     userData.addCommands(
       'yum install -y aws-cli',
-      // 'yum -y install ec2-instance-connect', // Install EC2 Instance Connect package
       'aws s3 cp s3://hn-testcloud-build-store/build.zip /tmp/',
       'unzip /tmp/build.zip -d /tmp/',
       'yum install -y nginx',
@@ -91,7 +113,9 @@ export class CdkStack extends cdk.Stack {
       //   subnetType: ec2.SubnetType.PUBLIC, // Ensure you're launching in a public subnet
       // },
       instanceType: new ec2.InstanceType('t2.micro'),
-      machineImage: new ec2.AmazonLinuxImage(), // or any other image you prefer
+      machineImage: new ec2.AmazonLinuxImage({
+        generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
+      }),
       role: ec2Role,
       userData: userData,
       securityGroup: sg,
