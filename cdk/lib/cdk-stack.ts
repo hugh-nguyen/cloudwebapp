@@ -39,7 +39,7 @@ export class CdkStack extends cdk.Stack {
     const privateSubnet = new ec2.PrivateSubnet(this, 'PrivateSubnet', {
         cidrBlock: '10.0.1.0/24',
         vpcId: vpc.vpcId,
-        availabilityZone: 'ap-southeast-a', // Adjust accordingly
+        availabilityZone: 'ap-southeast-2a', // Adjust accordingly
     });
 
     // VPN
