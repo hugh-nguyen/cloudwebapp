@@ -57,6 +57,8 @@ export class CdkStack extends cdk.Stack {
       description: 'authorize all groups',
     });
 
+    console.log("!!!!")
+    console.log(vpc.privateSubnets); // Let's see what's inside
     new ec2.CfnClientVpnTargetNetworkAssociation(this, 'ClientVpnNetworkAssociation', {
       clientVpnEndpointId: clientVpnEndpoint.ref,
       subnetId: vpc.privateSubnets[0].subnetId, // You can add more associations for other subnets if needed
