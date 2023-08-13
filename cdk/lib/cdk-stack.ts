@@ -11,10 +11,17 @@ export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // new logs.LogGroup(this, 'VPNConnectionLogs', {
-    //   logGroupName: 'VPNConnectionLogs',
-    //   retention: logs.RetentionDays.ONE_WEEK  // or another retention period as you need
-    // });
+    const vpnLogGroup = new logs.LogGroup(this, 'VPNConnectionLogs', {
+      logGroupName: 'VPNConnectionLogs',
+      retention: logs.RetentionDays.ONE_WEEK,  // or another retention period as you need
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
+    
+    new logs.LogStream(this, 'VPNConnectionStream', {
+      logGroup: vpnLogGroup,
+      logStreamName: 'VPNConnectionStream',
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
 
     // Create a new VPC
     const vpc = new ec2.Vpc(this, 'MyPrivateVPC', {
