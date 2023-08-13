@@ -28,19 +28,19 @@ export class CdkStack extends cdk.Stack {
             name: 'Public',
             cidrMask: 24,  // Adjust CIDR mask as needed
           }
-          // {
-          //   cidrMask: 24,
-          //   name: 'PrivateSubnet',
-          //   subnetType: ec2.SubnetType.PRIVATE_ISOLATED,  // ISOLATED subnet means it won't have NAT or Internet connectivity
-          // }
+          {
+            cidrMask: 24,
+            name: 'PrivateSubnet',
+            subnetType: ec2.SubnetType.PRIVATE_ISOLATED,  // ISOLATED subnet means it won't have NAT or Internet connectivity
+          }
         ],
     });
 
-    const privateSubnet = new ec2.PrivateSubnet(this, 'PrivateSubnet', {
-        cidrBlock: '10.0.1.0/24',
-        vpcId: vpc.vpcId,
-        availabilityZone: 'ap-southeast-2a', // Adjust accordingly
-    });
+    // const privateSubnet = new ec2.PrivateSubnet(this, 'PrivateSubnet', {
+    //     cidrBlock: '10.0.1.0/24',
+    //     vpcId: vpc.vpcId,
+    //     availabilityZone: 'ap-southeast-2a', // Adjust accordingly
+    // });
 
     // VPN
     const serverCertificateArn = 'arn:aws:acm:ap-southeast-2:308430141213:certificate/40e48a0e-0fbd-48f1-867e-504d08cf0441';
