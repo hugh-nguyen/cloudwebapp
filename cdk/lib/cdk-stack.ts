@@ -4,11 +4,17 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    new logs.LogGroup(this, 'VPNConnectionLogs', {
+      logGroupName: 'VPNConnectionLogs',
+      retention: logs.RetentionDays.ONE_WEEK  // or another retention period as you need
+    });
 
     // Create a new VPC
     const vpc = new ec2.Vpc(this, 'MyPrivateVPC', {
@@ -55,6 +61,8 @@ export class CdkStack extends cdk.Stack {
       clientCidrBlock: '10.1.0.0/16', // Client IP address range
       splitTunnel: true,  // Recommended to set this to true so that only VPC traffic routes through the VPN
     });
+
+    clientVpnEndpoint.node.addDependency(vpc);
 
     new ec2.CfnClientVpnAuthorizationRule(this, 'ClientVpnAuthorization', {
       clientVpnEndpointId: clientVpnEndpoint.ref,
