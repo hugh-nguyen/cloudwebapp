@@ -21,7 +21,7 @@ export class CdkStack extends cdk.Stack {
         ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/16'),
         maxAzs: 2,  // Recommended for high availability
         natGateways: 0,  // No NAT gateway for total isolation
-        
+        subnetConfiguration: []
         // subnetConfiguration: [
         //   {
         //     subnetType: ec2.SubnetType.PUBLIC,
