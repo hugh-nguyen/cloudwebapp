@@ -116,7 +116,7 @@ export class CdkStack extends cdk.Stack {
     new ec2.Instance(this, 'BastionHost', {
       vpc: vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PUBLIC,
+        subnets: [publicSubnet],
       },
       instanceType: new ec2.InstanceType('t2.micro'),
       machineImage: new ec2.AmazonLinuxImage({
@@ -164,9 +164,9 @@ export class CdkStack extends cdk.Stack {
 
     new ec2.Instance(this, 'MyInstance', {
       vpc: vpc,
-      // vpcSubnets: {
-      //   subnetType: ec2.SubnetType.PUBLIC, // Ensure you're launching in a public subnet
-      // },
+      vpcSubnets: {
+        subnets: [privateSubnet],
+      },
       instanceType: new ec2.InstanceType('t2.micro'),
       machineImage: new ec2.AmazonLinuxImage({
         generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
