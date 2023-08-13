@@ -21,13 +21,19 @@ export class CdkStack extends cdk.Stack {
             subnetType: ec2.SubnetType.PUBLIC,
             name: 'Public',
             cidrMask: 24,  // Adjust CIDR mask as needed
-          },
-          {
-            cidrMask: 24,
-            name: 'PrivateSubnet',
-            subnetType: ec2.SubnetType.PRIVATE_ISOLATED,  // ISOLATED subnet means it won't have NAT or Internet connectivity
           }
+          // {
+          //   cidrMask: 24,
+          //   name: 'PrivateSubnet',
+          //   subnetType: ec2.SubnetType.PRIVATE_ISOLATED,  // ISOLATED subnet means it won't have NAT or Internet connectivity
+          // }
         ],
+    });
+
+    const privateSubnet = new ec2.PrivateSubnet(this, 'PrivateSubnet', {
+        cidrBlock: '10.0.1.0/24',
+        vpcId: vpc.vpcId,
+        availabilityZone: 'ap-southeast-a', // Adjust accordingly
     });
 
     // VPN
@@ -61,7 +67,7 @@ export class CdkStack extends cdk.Stack {
     console.log(vpc.privateSubnets); // Let's see what's inside
     new ec2.CfnClientVpnTargetNetworkAssociation(this, 'ClientVpnNetworkAssociation', {
       clientVpnEndpointId: clientVpnEndpoint.ref,
-      subnetId: vpc.privateSubnets[0].subnetId, // You can add more associations for other subnets if needed
+      subnetId: privateSubnet.subnetId, // You can add more associations for other subnets if needed
     });
 
     // Create a Route53 private hosted zone
