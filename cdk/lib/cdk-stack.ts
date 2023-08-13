@@ -12,7 +12,7 @@ export class CdkStack extends cdk.Stack {
 
     // Create a new VPC
     const vpc = new ec2.Vpc(this, 'MyPrivateVPC', {
-        cidr: '10.0.0.0/16',
+        ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/16'),
         maxAzs: 2,  // Recommended for high availability
         natGateways: 0,  // No NAT gateway for total isolation2
         
