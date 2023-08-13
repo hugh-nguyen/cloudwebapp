@@ -3,6 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 
 export class CdkStack extends cdk.Stack {
@@ -27,6 +28,38 @@ export class CdkStack extends cdk.Stack {
             subnetType: ec2.SubnetType.PRIVATE_ISOLATED,  // ISOLATED subnet means it won't have NAT or Internet connectivity
           }
         ],
+    });
+
+    // VPN
+    const serverCertificateArn = 'arn:aws:acm:ap-southeast-2:308430141213:certificate/40e48a0e-0fbd-48f1-867e-504d08cf0441';
+
+    const clientVpnEndpoint = new ec2.CfnClientVpnEndpoint(this, 'ClientVPNEndpoint', {
+      authenticationOptions: [{
+        type: 'certificate-authentication',
+        mutualAuthentication: {
+          clientRootCertificateChainArn: serverCertificateArn,
+        },
+      }],
+      connectionLogOptions: {
+        enabled: true,
+        cloudwatchLogGroup: 'VPNConnectionLogs', // Create or use an existing log group for connection logs
+        cloudwatchLogStream: 'VPNConnectionStream', // Create or use an existing log stream for connection logs
+      },
+      serverCertificateArn: serverCertificateArn,
+      clientCidrBlock: '10.1.0.0/16', // Client IP address range
+      splitTunnel: true,  // Recommended to set this to true so that only VPC traffic routes through the VPN
+    });
+
+    new ec2.CfnClientVpnAuthorizationRule(this, 'ClientVpnAuthorization', {
+      clientVpnEndpointId: clientVpnEndpoint.ref,
+      targetNetworkCidr: vpc.vpcCidrBlock,
+      authorizeAllGroups: true,
+      description: 'authorize all groups',
+    });
+
+    new ec2.CfnClientVpnTargetNetworkAssociation(this, 'ClientVpnNetworkAssociation', {
+      clientVpnEndpointId: clientVpnEndpoint.ref,
+      subnetId: vpc.privateSubnets[0].subnetId, // You can add more associations for other subnets if needed
     });
 
     // Create a Route53 private hosted zone
